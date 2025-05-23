@@ -1,0 +1,3 @@
+[workspace]
+resolver = "3"
+members = ["chip8_emu_backend", "chip8_emu_frontend"]
