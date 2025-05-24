@@ -139,6 +139,11 @@ impl Cpu {
                 let return_addr = self.pop();
                 self.pc = return_addr;
             }
+            // Jump
+            (1, _, _, _) => {
+                let nnn = op & 0xFFF;
+                self.pc = nnn;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
