@@ -22,6 +22,8 @@ pub struct Cpu {
     v_reg: [u8; NUM_V_REGS],
     // 16-bit indexing register
     i_reg: u16,
+    // 16-bit stack pointer
+    sp: u16,
     // 16-bit stack
     stack: [u16; STACK_SIZE],
     // keys are either pressed (true) or not pressed (false)
@@ -43,6 +45,7 @@ impl Cpu {
             screen: [false; SCREEN_WIDTH * SCREEN_HEIGHT],
             v_reg: [0; NUM_V_REGS],
             i_reg: 0,
+            sp: 0,
             stack: [0; STACK_SIZE],
             keys: [false; NUM_KEYS],
             delay_t: 0,
