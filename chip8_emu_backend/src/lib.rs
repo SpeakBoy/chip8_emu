@@ -128,8 +128,12 @@ impl Cpu {
         let digit_4 = op & 0x000F;
 
         match (digit_1, digit_2, digit_3, digit_4) {
-            // NOP
+            // Nop
             (0, 0, 0, 0) => return,
+            // Clear screen
+            (0, 0, 0xE, 0) => {
+                self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
