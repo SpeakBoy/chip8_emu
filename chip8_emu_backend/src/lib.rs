@@ -134,6 +134,11 @@ impl Cpu {
             (0, 0, 0xE, 0) => {
                 self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
             }
+            // Return from subroutine
+            (0, 0, 0xE, 0xE) => {
+                let return_addr = self.pop();
+                self.pc = return_addr;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
