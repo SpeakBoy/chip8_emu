@@ -128,6 +128,8 @@ impl Cpu {
         let digit_4 = op & 0x000F;
 
         match (digit_1, digit_2, digit_3, digit_4) {
+            // NOP
+            (0, 0, 0, 0) => return,
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
