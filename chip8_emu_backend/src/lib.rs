@@ -100,6 +100,19 @@ impl Cpu {
         // Execute
     }
 
+    pub fn tick_timers(&mut self) {
+        if self.delay_t > 0 {
+            self.delay_t -= 1;
+        }
+
+        if self.sound_t > 0 {
+            if self.sound_t == 1 {
+                // BEEP
+            }
+            self.sound_t -= 1;
+        }
+    }
+
     fn fetch(&mut self) -> u16 {
         let first_byte = self.ram[self.pc as usize] as u16;
         let second_byte = self.ram[(self.pc + 1) as usize] as u16;
