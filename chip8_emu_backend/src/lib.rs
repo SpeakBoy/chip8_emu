@@ -96,8 +96,8 @@ impl Cpu {
     pub fn tick(&mut self) {
         // Fetch
         let op = self.fetch();
-        // Decode
-        // Execute
+        // Decode and execute
+        self.execute(op);
     }
 
     pub fn tick_timers(&mut self) {
@@ -119,6 +119,17 @@ impl Cpu {
         let op = (first_byte << 8) | second_byte;
         self.pc += 2;
         op
+    }
+
+    fn execute(&mut self, op: u16) {
+        let digit_1 = (op & 0xF000) >> 12;
+        let digit_2 = (op & 0x0F00) >> 8;
+        let digit_3 = (op & 0x00F0) >> 4;
+        let digit_4 = op & 0x000F;
+
+        match (digit_1, digit_2, digit_3, digit_4) {
+            (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
+        }
     }
 
     fn push(&mut self, val: u16) {
