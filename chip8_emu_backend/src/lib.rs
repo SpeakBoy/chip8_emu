@@ -144,6 +144,12 @@ impl Cpu {
                 let nnn = op & 0xFFF;
                 self.pc = nnn;
             }
+            // Call subroutine
+            (2, _, _, _) => {
+                let nnn = op & 0xFFF;
+                self.push(self.pc);
+                self.pc = nnn;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
