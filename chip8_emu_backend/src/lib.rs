@@ -257,6 +257,14 @@ impl Cpu {
                 self.v_reg[x] <<= 1;
                 self.v_reg[0xF] = msb;
             }
+            // Skip if VX != VY
+            (9, _, _, 0) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                if self.v_reg[x] != self.v_reg[y] {
+                    self.pc += 2;
+                }
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
