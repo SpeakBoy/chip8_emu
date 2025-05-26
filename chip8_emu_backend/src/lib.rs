@@ -210,6 +210,17 @@ impl Cpu {
                 let y = digit_3 as usize;
                 self.v_reg[x] ^= self.v_reg[y];
             }
+            // VX += VY
+            (8, _, _, 4) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+
+                let (new_vx, carry) = self.v_reg[x].overflowing_add(self.v_reg[y]);
+                let new_vf = if carry { 1 } else { 0 };
+
+                self.v_reg[x] = new_vx;
+                self.v_reg[0xF] = new_vf;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
