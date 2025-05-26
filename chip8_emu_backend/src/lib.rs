@@ -166,6 +166,14 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
+            // Skip next if VX == VY
+            (5, _, _, 0) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                if self.v_reg[x] == self.v_reg[y] {
+                    self.pc += 2;
+                }
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
