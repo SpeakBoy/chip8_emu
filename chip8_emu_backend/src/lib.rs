@@ -192,6 +192,24 @@ impl Cpu {
                 let y = digit_3 as usize;
                 self.v_reg[x] = self.v_reg[y];
             }
+            // VX |= VY (OR)
+            (8, _, _, 1) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                self.v_reg[x] |= self.v_reg[y];
+            }
+            // VX &= VY (AND)
+            (8, _, _, 2) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                self.v_reg[x] &= self.v_reg[y];
+            }
+            // VX ^= VY (XOR)
+            (8, _, _, 3) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                self.v_reg[x] ^= self.v_reg[y];
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
