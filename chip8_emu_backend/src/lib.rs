@@ -174,6 +174,12 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
+            // VX = VN
+            (6, _, _, _) => {
+                let x = digit_2 as usize;
+                let nn = (op & 0xFF) as u8;
+                self.v_reg[x] = nn;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
