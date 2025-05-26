@@ -221,6 +221,17 @@ impl Cpu {
                 self.v_reg[x] = new_vx;
                 self.v_reg[0xF] = new_vf;
             }
+            // VX -= VY
+            (8, _, _, 5) => {
+                let x = digit_2 as usize;
+                let y = digit_3 as usize;
+
+                let (new_vx, borrow) = self.v_reg[x].overflowing_sub(self.v_reg[y]);
+                let new_vf = if borrow { 0 } else { 1 };
+
+                self.v_reg[x] = new_vx;
+                self.v_reg[0xF] = new_vf;
+            }
             // VX >>= 1
             (8, _, _, 6) => {
                 let x = digit_2 as usize;
