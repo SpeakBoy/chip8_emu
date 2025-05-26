@@ -150,6 +150,14 @@ impl Cpu {
                 self.push(self.pc);
                 self.pc = nnn;
             }
+            // Skip next if VX == NN
+            (3, _, _, _) => {
+                let x = digit_2 as usize;
+                let nn = (op & 0xFF) as u8;
+                if self.v_reg[x] == nn {
+                    self.pc += 2;
+                }
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
