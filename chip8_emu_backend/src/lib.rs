@@ -265,6 +265,11 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
+            // I = NNN
+            (0xA, _, _, _) => {
+                let nnn = op & 0xFFF;
+                self.i_reg = nnn;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
