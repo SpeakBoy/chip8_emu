@@ -1,5 +1,3 @@
-use core::num;
-
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
