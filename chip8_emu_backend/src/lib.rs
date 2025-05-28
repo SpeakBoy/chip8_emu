@@ -358,8 +358,14 @@ impl Cpu {
                 }
 
                 if !pressed {
+                    // Redo opcode
                     self.pc -= 2;
                 }
+            }
+            // DT = VX
+            (0xF, _, 1, 5) => {
+                let x = digit_2 as usize;
+                self.delay_t = self.v_reg[x];
             }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
