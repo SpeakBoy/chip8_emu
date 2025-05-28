@@ -384,7 +384,22 @@ impl Cpu {
                 let char = self.v_reg[x] as u16;
                 self.i_reg = char * 5;
             }
+            // I = BCD of VX
+            (0xF, _, 3, 3) => {
+                let x = digit_2 as usize;
+                let vx = self.v_reg[x] as f32;
 
+                // Get the hundreds digit of VX
+                let hundreds = (vx / 100.0).floor() as u8;
+                // Get the tens digit of VX
+                let tens = ((vx / 10.0) % 10.0).floor() as u8;
+                // Get the ones digit of VX
+                let ones = (vx % 10.0) as u8;
+
+                self.ram[self.i_reg as usize] = hundreds;
+                self.ram[(self.i_reg + 1) as usize] = tens;
+                self.ram[(self.i_reg + 2) as usize] = ones;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
