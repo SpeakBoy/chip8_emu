@@ -356,6 +356,10 @@ impl Cpu {
                         break;
                     }
                 }
+
+                if !pressed {
+                    self.pc -= 2;
+                }
             }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
