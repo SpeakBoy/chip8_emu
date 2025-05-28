@@ -340,6 +340,11 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
+            // VX = DT
+            (0xF, _, 0, 7) => {
+                let x = digit_2 as usize;
+                self.v_reg[x] = self.delay_t;
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
