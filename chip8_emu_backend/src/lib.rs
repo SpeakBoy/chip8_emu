@@ -367,6 +367,12 @@ impl Cpu {
                 let x = digit_2 as usize;
                 self.delay_t = self.v_reg[x];
             }
+            // ST = VX
+            (0xF, _, 1, 8) => {
+                let x = digit_2 as usize;
+                self.sound_t = self.v_reg[x];
+            }
+
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
