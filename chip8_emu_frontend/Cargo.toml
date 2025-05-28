@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 chip8_emu_backend = { path = "../chip8_emu_backend" }
+sdl2 = "^0.34.3"
