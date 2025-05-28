@@ -322,6 +322,15 @@ impl Cpu {
                     self.v_reg[0xF] = 0;
                 }
             }
+            // Skip if Key Pressed
+            (0xE, _, 9, 0xE) => {
+                let x = digit_2 as usize;
+                let vx = self.v_reg[x];
+                let key = self.keys[vx as usize];
+                if key {
+                    self.pc += 2;
+                }
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
