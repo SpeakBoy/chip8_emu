@@ -378,6 +378,12 @@ impl Cpu {
                 let vx = self.v_reg[x] as u16;
                 self.i_reg = self.i_reg.wrapping_add(vx);
             }
+            // Set I to Font Address
+            (0xF, _, 2, 9) => {
+                let x = digit_2 as usize;
+                let char = self.v_reg[x] as u16;
+                self.i_reg = char * 5;
+            }
 
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
