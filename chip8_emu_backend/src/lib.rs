@@ -345,6 +345,18 @@ impl Cpu {
                 let x = digit_2 as usize;
                 self.v_reg[x] = self.delay_t;
             }
+            // Wait for Key Press
+            (0xF, _, 0, 0xA) => {
+                let x = digit_2 as usize;
+                let mut pressed = false;
+                for i in 0..self.keys.len() {
+                    if self.keys[i] {
+                        self.v_reg[x] = i as u8;
+                        pressed = true;
+                        break;
+                    }
+                }
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
     }
