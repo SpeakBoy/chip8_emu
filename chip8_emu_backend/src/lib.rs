@@ -372,6 +372,12 @@ impl Cpu {
                 let x = digit_2 as usize;
                 self.sound_t = self.v_reg[x];
             }
+            // I += VX
+            (0xF, _, 1, 0xE) => {
+                let x = digit_2 as usize;
+                let vx = self.v_reg[x] as u16;
+                self.i_reg = self.i_reg.wrapping_add(vx);
+            }
 
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
         }
