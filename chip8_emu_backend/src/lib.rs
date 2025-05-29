@@ -324,11 +324,9 @@ impl Cpu {
                     for x_line in 0..8 {
                         // Use mask to fetch current pixel's bit. Flip if a 1
                         if (pixels & (0b1000_0000 >> x_line)) != 0 {
-                            // Apply modulo to wrap sprites around screen
                             let x = x_coord + x_line;
-
                             if x >= SCREEN_WIDTH as u16 {
-                                continue;
+                                continue; // Clip right
                             }
 
                             // Get pixel's index for the 1D screen array
@@ -341,11 +339,7 @@ impl Cpu {
                 }
 
                 // Populate VF register
-                if flipped {
-                    self.v_reg[0xF] = 1;
-                } else {
-                    self.v_reg[0xF] = 0;
-                }
+                self.v_reg[0xF] = flipped as u8;
             }
             // Skip if Key Pressed
             (0xE, _, 9, 0xE) => {
