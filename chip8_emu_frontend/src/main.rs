@@ -3,15 +3,15 @@ use macroquad::prelude::*;
 use std::env;
 
 // Scale window to accomodate for larger screens.
-const SCALE: u32 = 15;
-const WINDOW_WIDTH: u32 = (SCREEN_WIDTH as u32) * SCALE;
-const WINDOW_HEIGHT: u32 = (SCREEN_HEIGHT as u32) * SCALE;
+const SCALE: i32 = 15;
+const WINDOW_WIDTH: i32 = (SCREEN_WIDTH as i32) * SCALE;
+const WINDOW_HEIGHT: i32 = (SCREEN_HEIGHT as i32) * SCALE;
 
 fn window_config() -> Conf {
     Conf {
         window_title: String::from("Chip-8 Emulator"),
-        window_width: WINDOW_WIDTH as i32,
-        window_height: WINDOW_HEIGHT as i32,
+        window_width: WINDOW_WIDTH,
+        window_height: WINDOW_HEIGHT,
         ..Default::default()
     }
 }
