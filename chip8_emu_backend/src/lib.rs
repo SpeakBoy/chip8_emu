@@ -254,6 +254,8 @@ impl Cpu {
             // VX >>= 1
             (8, _, _, 6) => {
                 let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                self.v_reg[x] = self.v_reg[y];
                 let lsb = self.v_reg[x] & 1;
                 self.v_reg[x] >>= 1;
                 self.v_reg[0xF] = lsb;
@@ -272,6 +274,8 @@ impl Cpu {
             // VX <<= 1
             (8, _, _, 0xE) => {
                 let x = digit_2 as usize;
+                let y = digit_3 as usize;
+                self.v_reg[x] = self.v_reg[y];
                 let msb = (self.v_reg[x] >> 7) & 1;
                 self.v_reg[x] <<= 1;
                 self.v_reg[0xF] = msb;
