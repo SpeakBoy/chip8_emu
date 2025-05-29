@@ -213,18 +213,21 @@ impl Cpu {
                 let x = digit_2 as usize;
                 let y = digit_3 as usize;
                 self.v_reg[x] |= self.v_reg[y];
+                self.v_reg[0xF] = 0;
             }
             // VX &= VY (AND)
             (8, _, _, 2) => {
                 let x = digit_2 as usize;
                 let y = digit_3 as usize;
                 self.v_reg[x] &= self.v_reg[y];
+                self.v_reg[0xF] = 0;
             }
             // VX ^= VY (XOR)
             (8, _, _, 3) => {
                 let x = digit_2 as usize;
                 let y = digit_3 as usize;
                 self.v_reg[x] ^= self.v_reg[y];
+                self.v_reg[0xF] = 0;
             }
             // VX += VY
             (8, _, _, 4) => {
@@ -417,17 +420,17 @@ impl Cpu {
             // Store V0 to VX into I
             (0xF, _, 5, 5) => {
                 let x = digit_2 as usize;
-                let i = self.i_reg as usize;
                 for idx in 0..=x {
-                    self.ram[i + idx] = self.v_reg[idx];
+                    self.ram[self.i_reg as usize] = self.v_reg[idx];
+                    self.i_reg += 1;
                 }
             }
             // Load I into V0 to VX
             (0xF, _, 6, 5) => {
                 let x = digit_2 as usize;
-                let i = self.i_reg as usize;
                 for idx in 0..=x {
-                    self.v_reg[idx] = self.ram[i + idx];
+                    self.v_reg[idx] = self.ram[self.i_reg as usize];
+                    self.i_reg += 1;
                 }
             }
             (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),

@@ -8,7 +8,7 @@ use std::io::Read;
 const SCALE: i32 = 15;
 const WINDOW_WIDTH: i32 = (SCREEN_WIDTH as i32) * SCALE;
 const WINDOW_HEIGHT: i32 = (SCREEN_HEIGHT as i32) * SCALE;
-const TICKS_PER_FRAME: usize = 10;
+const TICKS_PER_FRAME: usize = 8;
 
 fn window_config() -> Conf {
     Conf {
