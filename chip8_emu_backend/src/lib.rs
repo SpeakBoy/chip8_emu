@@ -52,6 +52,8 @@ pub struct Cpu {
     stack: [u16; STACK_SIZE],
     // keys are either pressed (true) or not pressed (false)
     keys: [bool; NUM_KEYS],
+    // previous keys array for use with FX0A instruction
+    prev_keys: [bool; NUM_KEYS],
     // 8-bit delay timer register
     delay_t: u8,
     // 8-bit sound timer register
@@ -72,6 +74,7 @@ impl Cpu {
             sp: 0,
             stack: [0; STACK_SIZE],
             keys: [false; NUM_KEYS],
+            prev_keys: [false; NUM_KEYS],
             delay_t: 0,
             sound_t: 0,
         };
@@ -90,6 +93,7 @@ impl Cpu {
         self.sp = 0;
         self.stack = [0; STACK_SIZE];
         self.keys = [false; NUM_KEYS];
+        self.prev_keys = [false; NUM_KEYS];
         self.delay_t = 0;
         self.sound_t = 0;
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -120,6 +124,7 @@ impl Cpu {
     }
 
     pub fn keypress(&mut self, idx: usize, pressed: bool) {
+        self.prev_keys[idx] = self.keys[idx];
         self.keys[idx] = pressed;
     }
 
@@ -371,16 +376,16 @@ impl Cpu {
             // Wait for Key Press
             (0xF, _, 0, 0xA) => {
                 let x = digit_2 as usize;
-                let mut pressed = false;
+                let mut released = false;
                 for i in 0..self.keys.len() {
-                    if self.keys[i] {
+                    if !self.keys[i] && self.prev_keys[i] {
                         self.v_reg[x] = i as u8;
-                        pressed = true;
+                        released = true;
                         break;
                     }
                 }
 
-                if !pressed {
+                if !released {
                     // Redo opcode
                     self.pc -= 2;
                 }

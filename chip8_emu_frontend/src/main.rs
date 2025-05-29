@@ -10,6 +10,25 @@ const WINDOW_WIDTH: i32 = (SCREEN_WIDTH as i32) * SCALE;
 const WINDOW_HEIGHT: i32 = (SCREEN_HEIGHT as i32) * SCALE;
 const TICKS_PER_FRAME: usize = 8;
 
+const KEYS: [KeyCode; 16] = [
+    KeyCode::X,    // 0
+    KeyCode::Key1, // 1
+    KeyCode::Key2, // 2
+    KeyCode::Key3, // 3
+    KeyCode::Q,    // 4
+    KeyCode::W,    // 5
+    KeyCode::E,    // 6
+    KeyCode::A,    // 7
+    KeyCode::S,    // 8
+    KeyCode::D,    // 9
+    KeyCode::Z,    // A
+    KeyCode::C,    // B
+    KeyCode::Key4, // C
+    KeyCode::R,    // D
+    KeyCode::F,    // E
+    KeyCode::V,    // F
+];
+
 fn window_config() -> Conf {
     Conf {
         window_title: String::from("Chip-8 Emulator"),
@@ -43,28 +62,6 @@ fn draw_screen(cpu: &Cpu) {
     }
 }
 
-fn key2btn(key: KeyCode) -> Option<usize> {
-    match key {
-        KeyCode::Key1 => Some(0x1),
-        KeyCode::Key2 => Some(0x2),
-        KeyCode::Key3 => Some(0x3),
-        KeyCode::Key4 => Some(0xC),
-        KeyCode::Q => Some(0x4),
-        KeyCode::W => Some(0x5),
-        KeyCode::E => Some(0x6),
-        KeyCode::R => Some(0xD),
-        KeyCode::A => Some(0x7),
-        KeyCode::S => Some(0x8),
-        KeyCode::D => Some(0x9),
-        KeyCode::F => Some(0xE),
-        KeyCode::Z => Some(0xA),
-        KeyCode::X => Some(0x0),
-        KeyCode::C => Some(0xB),
-        KeyCode::V => Some(0xF),
-        _ => None,
-    }
-}
-
 #[macroquad::main(window_config)]
 async fn main() {
     let args: Vec<_> = env::args().collect();
@@ -84,15 +81,9 @@ async fn main() {
         if is_quit_requested() || is_key_pressed(KeyCode::Escape) {
             break 'gameloop;
         }
-        for key in get_keys_pressed() {
-            if let Some(k) = key2btn(key) {
-                chip8.keypress(k, true);
-            }
-        }
-        for key in get_keys_released() {
-            if let Some(k) = key2btn(key) {
-                chip8.keypress(k, false);
-            }
+        for (key, &keycode) in KEYS.iter().enumerate() {
+            let pressed = is_key_down(keycode);
+            chip8.keypress(key, pressed);
         }
 
         for _ in 0..TICKS_PER_FRAME {
