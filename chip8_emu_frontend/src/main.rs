@@ -1,5 +1,5 @@
 use chip8_emu_backend::*;
-use sdl2::event::Event;
+use macroquad::prelude::*;
 use std::env;
 
 // Scale window to accomodate for larger screens.
@@ -7,37 +7,30 @@ const SCALE: u32 = 15;
 const WINDOW_WIDTH: u32 = (SCREEN_WIDTH as u32) * SCALE;
 const WINDOW_HEIGHT: u32 = (SCREEN_HEIGHT as u32) * SCALE;
 
-fn main() {
+fn window_config() -> Conf {
+    Conf {
+        window_title: String::from("Chip-8 Emulator"),
+        window_width: WINDOW_WIDTH as i32,
+        window_height: WINDOW_HEIGHT as i32,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_config)]
+async fn main() {
     let args: Vec<_> = env::args().collect();
     if args.len() != 2 {
         println!("Usage: cargo run path/to/game");
         return;
     }
 
-    // Setup SDL
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem
-        .window("Chip-8 Emulator", WINDOW_WIDTH, WINDOW_HEIGHT)
-        .position_centered()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-    canvas.clear();
-    canvas.present();
-
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    clear_background(BLACK);
 
     'gameloop: loop {
-        for evt in event_pump.poll_iter() {
-            match evt {
-                Event::Quit { .. } => {
-                    break 'gameloop;
-                }
-                _ => (),
-            }
+        if is_quit_requested() {
+            break 'gameloop;
         }
+
+        next_frame().await;
     }
 }
