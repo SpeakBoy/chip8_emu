@@ -303,15 +303,20 @@ impl Cpu {
             }
             // Draw Sprite
             (0xD, _, _, _) => {
-                // Get (x, y) coords for sprite
-                let x_coord = self.v_reg[digit_2 as usize] as u16;
-                let y_coord = self.v_reg[digit_3 as usize] as u16;
+                // Get (x, y) coords for sprite, wrap before drawing.
+                let x_coord = self.v_reg[digit_2 as usize] as u16 % SCREEN_WIDTH as u16;
+                let y_coord = self.v_reg[digit_3 as usize] as u16 % SCREEN_HEIGHT as u16;
                 // Last digit determines height of sprite
                 let num_rows = digit_4;
                 // Keep track if any pixels were flipped
                 let mut flipped = false;
                 // Iterate over each row of the sprite
                 for y_line in 0..num_rows {
+                    let y = y_coord + y_line;
+                    if y >= SCREEN_HEIGHT as u16 {
+                        continue; // Clip bottom
+                    }
+
                     // Determine where row's data is stored
                     let addr = self.i_reg + y_line as u16;
                     let pixels = self.ram[addr as usize];
@@ -320,11 +325,14 @@ impl Cpu {
                         // Use mask to fetch current pixel's bit. Flip if a 1
                         if (pixels & (0b1000_0000 >> x_line)) != 0 {
                             // Apply modulo to wrap sprites around screen
-                            let x = (x_coord + x_line) as usize % SCREEN_WIDTH;
-                            let y = (y_coord + y_line) as usize % SCREEN_HEIGHT;
+                            let x = x_coord + x_line;
+
+                            if x >= SCREEN_WIDTH as u16 {
+                                continue;
+                            }
 
                             // Get pixel's index for the 1D screen array
-                            let idx = x + SCREEN_WIDTH * y;
+                            let idx = x as usize + SCREEN_WIDTH * y as usize;
                             // Check if pixel will be flipped and set
                             flipped |= self.screen[idx];
                             self.screen[idx] ^= true;
