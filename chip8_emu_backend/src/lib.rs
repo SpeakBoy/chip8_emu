@@ -1,6 +1,6 @@
-mod audio;
+pub mod audio;
 
-use audio::AudioManager;
+pub use audio::AudioManager;
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
@@ -68,7 +68,7 @@ pub struct Cpu {
 const START_ADDR: u16 = 0x200;
 
 impl Cpu {
-    pub fn new() -> Self {
+    pub fn new(audio: AudioManager) -> Self {
         let mut new_cpu = Self {
             pc: START_ADDR,
             ram: [0; RAM_SIZE],
@@ -81,7 +81,7 @@ impl Cpu {
             prev_keys: [false; NUM_KEYS],
             delay_t: 0,
             sound_t: 0,
-            audio: AudioManager::new(),
+            audio,
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
