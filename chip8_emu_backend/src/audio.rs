@@ -1,4 +1,4 @@
-use macroquad::audio::{PlaySoundParams, Sound, load_sound, play_sound, stop_sound};
+use macroquad::audio::{PlaySoundParams, Sound, load_sound_from_bytes, play_sound, stop_sound};
 
 pub struct AudioManager {
     beep: Sound,
@@ -7,7 +7,8 @@ pub struct AudioManager {
 
 impl AudioManager {
     pub async fn new() -> Self {
-        let beep = load_sound("assets/beep.wav").await.unwrap();
+        let beep_data = include_bytes!("../../assets/beep.wav");
+        let beep = load_sound_from_bytes(beep_data).await.unwrap();
         Self {
             beep: beep,
             is_playing: false,
