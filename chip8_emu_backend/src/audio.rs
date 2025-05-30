@@ -8,9 +8,11 @@ pub struct AudioManager {
 impl AudioManager {
     pub async fn new() -> Self {
         let beep_data = include_bytes!("../../assets/beep.wav");
-        let beep = load_sound_from_bytes(beep_data).await.unwrap();
+        let beep = load_sound_from_bytes(beep_data)
+            .await
+            .expect("Unable to load embedded beep.wav");
         Self {
-            beep: beep,
+            beep,
             is_playing: false,
         }
     }
