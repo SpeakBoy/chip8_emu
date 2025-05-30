@@ -1,5 +1,6 @@
 use chip8_emu_backend::*;
 use macroquad::prelude::*;
+use rfd::FileDialog;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -64,9 +65,12 @@ fn draw_screen(cpu: &Cpu) {
 
 #[macroquad::main(window_config)]
 async fn main() {
-    let args: Vec<_> = env::args().collect();
-    if args.len() != 2 {
-        println!("Usage: cargo run path/to/game");
+    let file = FileDialog::new()
+        .add_filter("CHIP-8 ROM", &["ch8", "rom"])
+        .pick_file();
+
+    if file.is_none() {
+        println!("No ROM selected.");
         return;
     }
 
@@ -74,7 +78,7 @@ async fn main() {
 
     let mut chip8 = Cpu::new(audio);
 
-    let mut rom = File::open(&args[1]).expect("Unable to open file");
+    let mut rom = File::open(file.unwrap()).expect("Unable to open file");
     let mut buffer = Vec::new();
     rom.read_to_end(&mut buffer).unwrap();
     chip8.load(&buffer);

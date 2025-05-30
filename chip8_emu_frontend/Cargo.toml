@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 chip8_emu_backend = { path = "../chip8_emu_backend" }
 macroquad = "0.4.14"
+rfd = "0.15.3"
