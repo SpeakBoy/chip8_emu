@@ -1,6 +1,8 @@
 use chip8_emu_backend::*;
 use macroquad::prelude::*;
 use rfd::FileDialog;
+use rfd::MessageDialog;
+use rfd::MessageLevel;
 use std::fs::File;
 use std::io::Read;
 
@@ -66,10 +68,15 @@ fn draw_screen(cpu: &Cpu) {
 async fn main() {
     let file = FileDialog::new()
         .add_filter("CHIP-8 ROM", &["ch8", "rom"])
+        .add_filter("All Files", &["*"])
         .pick_file();
 
     if file.is_none() {
-        println!("No ROM selected.");
+        MessageDialog::new()
+            .set_title("Error")
+            .set_description("No ROM selected!")
+            .set_level(MessageLevel::Error)
+            .show();
         return;
     }
 
