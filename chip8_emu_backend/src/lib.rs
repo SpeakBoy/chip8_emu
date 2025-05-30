@@ -1,3 +1,6 @@
+mod audio;
+
+use audio::AudioManager;
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
@@ -58,6 +61,7 @@ pub struct Cpu {
     delay_t: u8,
     // 8-bit sound timer register
     sound_t: u8,
+    audio: AudioManager,
 }
 
 // starting address
@@ -77,6 +81,7 @@ impl Cpu {
             prev_keys: [false; NUM_KEYS],
             delay_t: 0,
             sound_t: 0,
+            audio: AudioManager::new(),
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -96,6 +101,7 @@ impl Cpu {
         self.prev_keys = [false; NUM_KEYS];
         self.delay_t = 0;
         self.sound_t = 0;
+        self.audio.stop_beep();
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
     }
 
@@ -112,10 +118,10 @@ impl Cpu {
         }
 
         if self.sound_t > 0 {
-            if self.sound_t == 1 {
-                // BEEP (TODO)
-            }
+            self.audio.start_beep();
             self.sound_t -= 1;
+        } else {
+            self.audio.stop_beep();
         }
     }
 
@@ -415,14 +421,14 @@ impl Cpu {
             // I = BCD of VX
             (0xF, _, 3, 3) => {
                 let x = digit_2 as usize;
-                let vx = self.v_reg[x] as f32;
+                let vx = self.v_reg[x];
 
                 // Get the hundreds digit of VX
-                let hundreds = (vx / 100.0).floor() as u8;
+                let hundreds = vx / 100;
                 // Get the tens digit of VX
-                let tens = ((vx / 10.0) % 10.0).floor() as u8;
+                let tens = (vx / 10) % 10;
                 // Get the ones digit of VX
-                let ones = (vx % 10.0) as u8;
+                let ones = vx % 10;
 
                 self.ram[self.i_reg as usize] = hundreds;
                 self.ram[(self.i_reg + 1) as usize] = tens;
