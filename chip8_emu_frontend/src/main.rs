@@ -1,7 +1,6 @@
 use chip8_emu_backend::*;
 use macroquad::prelude::*;
 use rfd::FileDialog;
-use std::env;
 use std::fs::File;
 use std::io::Read;
 
