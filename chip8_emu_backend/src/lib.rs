@@ -158,131 +158,143 @@ impl Cpu {
         let nn = (op & 0xFF) as u8;
         let nnn = op & 0x0FFF;
 
-        match (digit_1, digit_2, digit_3, digit_4) {
-            // Nop
-            (0, 0, 0, 0) => return,
-            // Clear screen
-            (0, 0, 0xE, 0) => {
-                self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
-            }
-            // Return from subroutine
-            (0, 0, 0xE, 0xE) => {
-                let return_addr = self.pop();
-                self.pc = return_addr;
-            }
-            // Jump
-            (1, _, _, _) => {
+        match digit_1 {
+            0x0 => match (digit_2, digit_3, digit_4) {
+                // 0000 - NOOP
+                (0x0, 0x0, 0x0) => return,
+                // 00E0 - Clear screen
+                (0x0, 0xE, 0x0) => {
+                    self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
+                }
+                // 00EE - Return from subroutine
+                (0x0, 0xE, 0xE) => {
+                    self.pc = self.pop();
+                }
+                _ => panic!("invalid opcode"),
+            },
+            0x1 => {
+                // 1NNN - Jump
                 self.pc = nnn;
             }
-            // Call subroutine
-            (2, _, _, _) => {
+            0x2 => {
+                // 2NNN - Call subroutine
                 self.push(self.pc);
                 self.pc = nnn;
             }
-            // Skip next if VX == NN
-            (3, _, _, _) => {
+            0x3 => {
+                // 3XNN - Skip next if VX == NN
                 if self.v_reg[x] == nn {
                     self.pc += 2;
                 }
             }
-            // Skip next if VX != NN
-            (4, _, _, _) => {
+            0x4 => {
+                // 4XNN - Skip next if VX != NN
                 if self.v_reg[x] != nn {
                     self.pc += 2;
                 }
             }
-            // Skip next if VX == VY
-            (5, _, _, 0) => {
-                if self.v_reg[x] == self.v_reg[y] {
-                    self.pc += 2;
+            0x5 => match digit_4 {
+                // 5XY0 - Skip next if VX == VY
+                0x0 => {
+                    if self.v_reg[x] == self.v_reg[y] {
+                        self.pc += 2;
+                    }
                 }
-            }
-            // VX = VN
-            (6, _, _, _) => {
+                _ => panic!("invalid opcode"),
+            },
+            0x6 => {
+                // 6XNN - VX = NN
                 self.v_reg[x] = nn;
             }
-            // VX += VN
-            (7, _, _, _) => {
+            0x7 => {
+                // 7XNN - VX += NN
                 self.v_reg[x] = self.v_reg[x].wrapping_add(nn);
             }
-            // VX = VY
-            (8, _, _, 0) => {
-                self.v_reg[x] = self.v_reg[y];
-            }
-            // VX |= VY (OR)
-            (8, _, _, 1) => {
-                self.v_reg[x] |= self.v_reg[y];
-                self.v_reg[0xF] = 0;
-            }
-            // VX &= VY (AND)
-            (8, _, _, 2) => {
-                self.v_reg[x] &= self.v_reg[y];
-                self.v_reg[0xF] = 0;
-            }
-            // VX ^= VY (XOR)
-            (8, _, _, 3) => {
-                self.v_reg[x] ^= self.v_reg[y];
-                self.v_reg[0xF] = 0;
-            }
-            // VX += VY
-            (8, _, _, 4) => {
-                let (new_vx, carry) = self.v_reg[x].overflowing_add(self.v_reg[y]);
-                let new_vf = if carry { 1 } else { 0 };
-
-                self.v_reg[x] = new_vx;
-                self.v_reg[0xF] = new_vf;
-            }
-            // VX -= VY
-            (8, _, _, 5) => {
-                let (new_vx, borrow) = self.v_reg[x].overflowing_sub(self.v_reg[y]);
-                let new_vf = if borrow { 0 } else { 1 };
-
-                self.v_reg[x] = new_vx;
-                self.v_reg[0xF] = new_vf;
-            }
-            // VX >>= 1
-            (8, _, _, 6) => {
-                self.v_reg[x] = self.v_reg[y];
-                let lsb = self.v_reg[x] & 1;
-                self.v_reg[x] >>= 1;
-                self.v_reg[0xF] = lsb;
-            }
-            // VX = VY - VX
-            (8, _, _, 7) => {
-                let (new_vx, borrow) = self.v_reg[y].overflowing_sub(self.v_reg[x]);
-                let new_vf = if borrow { 0 } else { 1 };
-
-                self.v_reg[x] = new_vx;
-                self.v_reg[0xF] = new_vf;
-            }
-            // VX <<= 1
-            (8, _, _, 0xE) => {
-                self.v_reg[x] = self.v_reg[y];
-                let msb = (self.v_reg[x] >> 7) & 1;
-                self.v_reg[x] <<= 1;
-                self.v_reg[0xF] = msb;
-            }
-            // Skip if VX != VY
-            (9, _, _, 0) => {
-                if self.v_reg[x] != self.v_reg[y] {
-                    self.pc += 2;
+            0x8 => match digit_4 {
+                // 8XY0 - VX = VY
+                0x0 => {
+                    self.v_reg[x] = self.v_reg[y];
                 }
-            }
-            // I = NNN
-            (0xA, _, _, _) => {
+                // 8XY1 - VX |= VY (OR)
+                0x1 => {
+                    self.v_reg[x] |= self.v_reg[y];
+                    self.v_reg[0xF] = 0;
+                }
+                // 8XY2 - VX &= VY (AND)
+                0x2 => {
+                    self.v_reg[x] &= self.v_reg[y];
+                    self.v_reg[0xF] = 0;
+                }
+                // 8XY3 - VX ^= VY (XOR)
+                0x3 => {
+                    self.v_reg[x] ^= self.v_reg[y];
+                    self.v_reg[0xF] = 0;
+                }
+                // 8XY4 - VX += VY
+                0x4 => {
+                    let (new_vx, carry) = self.v_reg[x].overflowing_add(self.v_reg[y]);
+                    let new_vf = if carry { 1 } else { 0 };
+
+                    self.v_reg[x] = new_vx;
+                    self.v_reg[0xF] = new_vf;
+                }
+                // 8XY5 - VX -= VY
+                0x5 => {
+                    let (new_vx, borrow) = self.v_reg[x].overflowing_sub(self.v_reg[y]);
+                    let new_vf = if borrow { 0 } else { 1 };
+
+                    self.v_reg[x] = new_vx;
+                    self.v_reg[0xF] = new_vf;
+                }
+                // 8XY6 - VX >>= 1
+                0x6 => {
+                    self.v_reg[x] = self.v_reg[y];
+                    let lsb = self.v_reg[x] & 1;
+                    self.v_reg[x] >>= 1;
+                    self.v_reg[0xF] = lsb;
+                }
+                // 8XY7 - VX = VY - VX
+                0x7 => {
+                    let (new_vx, borrow) = self.v_reg[y].overflowing_sub(self.v_reg[x]);
+                    let new_vf = if borrow { 0 } else { 1 };
+
+                    self.v_reg[x] = new_vx;
+                    self.v_reg[0xF] = new_vf;
+                }
+                // 8XYE - VX <<= 1
+                0xE => {
+                    self.v_reg[x] = self.v_reg[y];
+                    let msb = (self.v_reg[x] >> 7) & 1;
+                    self.v_reg[x] <<= 1;
+                    self.v_reg[0xF] = msb;
+                }
+                _ => panic!("invalid opcode"),
+            },
+            0x9 => match digit_4 {
+                // 9XY0 - Skip next if VX != VY
+                0x0 => {
+                    if self.v_reg[x] != self.v_reg[y] {
+                        self.pc += 2;
+                    }
+                }
+                _ => panic!("invalid opcode"),
+            },
+            0xA => {
+                // ANNN - I = NNN
                 self.i_reg = nnn;
             }
-            // Jump to V0 + NNN
-            (0xB, _, _, _) => {
+            0xB => {
+                // BNNN - Jump to V0 + NNN
                 self.pc = (self.v_reg[0] as u16) + nnn;
             }
-            // VX = rand() & NN
-            (0xC, _, _, _) => {
+            0xC => {
+                // CXNN - rand() & NN
                 let rng: u8 = random();
                 self.v_reg[x] = rng & nn;
             }
-            // Draw Sprite
-            (0xD, _, _, _) => {
+            0xD => {
+                // DXYN - Draw Sprite
+
                 // Get (x, y) coords for sprite, wrap before drawing.
                 let x_coord = self.v_reg[digit_2 as usize] as u16 % SCREEN_WIDTH as u16;
                 let y_coord = self.v_reg[digit_3 as usize] as u16 % SCREEN_HEIGHT as u16;
@@ -321,90 +333,96 @@ impl Cpu {
                 // Populate VF register
                 self.v_reg[0xF] = flipped as u8;
             }
-            // Skip if Key Pressed
-            (0xE, _, 9, 0xE) => {
-                let vx = self.v_reg[x];
-                let key = self.keys[vx as usize];
-                if key {
-                    self.pc += 2;
-                }
-            }
-            // Skip if Key Not Pressed
-            (0xE, _, 0xA, 1) => {
-                let vx = self.v_reg[x];
-                let key = self.keys[vx as usize];
-                if !key {
-                    self.pc += 2;
-                }
-            }
-            // VX = DT
-            (0xF, _, 0, 7) => {
-                self.v_reg[x] = self.delay_t;
-            }
-            // Wait for Key Press
-            (0xF, _, 0, 0xA) => {
-                let mut released = false;
-                for i in 0..self.keys.len() {
-                    if !self.keys[i] && self.prev_keys[i] {
-                        self.v_reg[x] = i as u8;
-                        released = true;
-                        break;
+            0xE => match (digit_3, digit_4) {
+                // EX9E - Skip if Key Pressed
+                (0x9, 0xE) => {
+                    let vx = self.v_reg[x];
+                    let key = self.keys[vx as usize];
+                    if key {
+                        self.pc += 2;
                     }
                 }
-
-                if !released {
-                    // Redo opcode
-                    self.pc -= 2;
+                // EXA1 - Skip if Key Not Pressed
+                (0xA, 0x1) => {
+                    let vx = self.v_reg[x];
+                    let key = self.keys[vx as usize];
+                    if !key {
+                        self.pc += 2;
+                    }
                 }
-            }
-            // DT = VX
-            (0xF, _, 1, 5) => {
-                self.delay_t = self.v_reg[x];
-            }
-            // ST = VX
-            (0xF, _, 1, 8) => {
-                self.sound_t = self.v_reg[x];
-            }
-            // I += VX
-            (0xF, _, 1, 0xE) => {
-                let vx = self.v_reg[x] as u16;
-                self.i_reg = self.i_reg.wrapping_add(vx);
-            }
-            // Set I to Font Address
-            (0xF, _, 2, 9) => {
-                let char = self.v_reg[x] as u16;
-                self.i_reg = char * 5;
-            }
-            // I = BCD of VX
-            (0xF, _, 3, 3) => {
-                let vx = self.v_reg[x];
-
-                // Get the hundreds digit of VX
-                let hundreds = vx / 100;
-                // Get the tens digit of VX
-                let tens = (vx / 10) % 10;
-                // Get the ones digit of VX
-                let ones = vx % 10;
-
-                self.ram[self.i_reg as usize] = hundreds;
-                self.ram[(self.i_reg + 1) as usize] = tens;
-                self.ram[(self.i_reg + 2) as usize] = ones;
-            }
-            // Store V0 to VX into I
-            (0xF, _, 5, 5) => {
-                for idx in 0..=x {
-                    self.ram[self.i_reg as usize] = self.v_reg[idx];
-                    self.i_reg += 1;
+                _ => panic!("invalid opcode"),
+            },
+            0xF => match (digit_3, digit_4) {
+                // FXO7 - VX = DT
+                (0x0, 0x7) => {
+                    self.v_reg[x] = self.delay_t;
                 }
-            }
-            // Load I into V0 to VX
-            (0xF, _, 6, 5) => {
-                for idx in 0..=x {
-                    self.v_reg[idx] = self.ram[self.i_reg as usize];
-                    self.i_reg += 1;
+                // FX0A - Wait for Key Press (Release)
+                (0x0, 0xA) => {
+                    let mut released = false;
+                    for i in 0..self.keys.len() {
+                        if !self.keys[i] && self.prev_keys[i] {
+                            self.v_reg[x] = i as u8;
+                            released = true;
+                            break;
+                        }
+                    }
+
+                    if !released {
+                        // Redo opcode
+                        self.pc -= 2;
+                    }
                 }
-            }
-            (_, _, _, _) => unimplemented!("Unimplemented opcode: {}", op),
+                // FX15 - DT = VX
+                (0x1, 0x5) => {
+                    self.delay_t = self.v_reg[x];
+                }
+                // FX18 - ST = VX
+                (0x1, 0x8) => {
+                    self.sound_t = self.v_reg[x];
+                }
+                // FX1E - I += VX
+                (0x1, 0xE) => {
+                    let vx = self.v_reg[x] as u16;
+                    self.i_reg = self.i_reg.wrapping_add(vx);
+                }
+                // FX29 - Set I to Sprite for Digit VX
+                (0x2, 0x9) => {
+                    let char = self.v_reg[x] as u16;
+                    self.i_reg = char * 5;
+                }
+                // FX33 - I = BCD of VX
+                (0x3, 0x3) => {
+                    let vx = self.v_reg[x];
+
+                    // Get the hundreds digit of VX
+                    let hundreds = vx / 100;
+                    // Get the tens digit of VX
+                    let tens = (vx / 10) % 10;
+                    // Get the ones digit of VX
+                    let ones = vx % 10;
+
+                    self.ram[self.i_reg as usize] = hundreds;
+                    self.ram[(self.i_reg + 1) as usize] = tens;
+                    self.ram[(self.i_reg + 2) as usize] = ones;
+                }
+                // FX55 - Store V0 to VX into I
+                (0x5, 0x5) => {
+                    for idx in 0..=x {
+                        self.ram[self.i_reg as usize] = self.v_reg[idx];
+                        self.i_reg += 1;
+                    }
+                }
+                // FX65 - Load I into V0 to VX
+                (0x6, 0x5) => {
+                    for idx in 0..=x {
+                        self.v_reg[idx] = self.ram[self.i_reg as usize];
+                        self.i_reg += 1;
+                    }
+                }
+                _ => panic!("invalid opcode"),
+            },
+            _ => panic!("invalid hexadecimal digit"),
         }
     }
 
