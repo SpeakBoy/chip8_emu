@@ -153,6 +153,10 @@ impl Cpu {
         let digit_2 = (op & 0x0F00) >> 8;
         let digit_3 = (op & 0x00F0) >> 4;
         let digit_4 = op & 0x000F;
+        let x = digit_2 as usize;
+        let y = digit_3 as usize;
+        let nn = (op & 0xFF) as u8;
+        let nnn = op & 0x0FFF;
 
         match (digit_1, digit_2, digit_3, digit_4) {
             // Nop
@@ -168,83 +172,60 @@ impl Cpu {
             }
             // Jump
             (1, _, _, _) => {
-                let nnn = op & 0xFFF;
                 self.pc = nnn;
             }
             // Call subroutine
             (2, _, _, _) => {
-                let nnn = op & 0xFFF;
                 self.push(self.pc);
                 self.pc = nnn;
             }
             // Skip next if VX == NN
             (3, _, _, _) => {
-                let x = digit_2 as usize;
-                let nn = (op & 0xFF) as u8;
                 if self.v_reg[x] == nn {
                     self.pc += 2;
                 }
             }
             // Skip next if VX != NN
             (4, _, _, _) => {
-                let x = digit_2 as usize;
-                let nn = (op & 0xFF) as u8;
                 if self.v_reg[x] != nn {
                     self.pc += 2;
                 }
             }
             // Skip next if VX == VY
             (5, _, _, 0) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 if self.v_reg[x] == self.v_reg[y] {
                     self.pc += 2;
                 }
             }
             // VX = VN
             (6, _, _, _) => {
-                let x = digit_2 as usize;
-                let nn = (op & 0xFF) as u8;
                 self.v_reg[x] = nn;
             }
             // VX += VN
             (7, _, _, _) => {
-                let x = digit_2 as usize;
-                let nn = (op & 0xFF) as u8;
                 self.v_reg[x] = self.v_reg[x].wrapping_add(nn);
             }
             // VX = VY
             (8, _, _, 0) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] = self.v_reg[y];
             }
             // VX |= VY (OR)
             (8, _, _, 1) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] |= self.v_reg[y];
                 self.v_reg[0xF] = 0;
             }
             // VX &= VY (AND)
             (8, _, _, 2) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] &= self.v_reg[y];
                 self.v_reg[0xF] = 0;
             }
             // VX ^= VY (XOR)
             (8, _, _, 3) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] ^= self.v_reg[y];
                 self.v_reg[0xF] = 0;
             }
             // VX += VY
             (8, _, _, 4) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
-
                 let (new_vx, carry) = self.v_reg[x].overflowing_add(self.v_reg[y]);
                 let new_vf = if carry { 1 } else { 0 };
 
@@ -253,9 +234,6 @@ impl Cpu {
             }
             // VX -= VY
             (8, _, _, 5) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
-
                 let (new_vx, borrow) = self.v_reg[x].overflowing_sub(self.v_reg[y]);
                 let new_vf = if borrow { 0 } else { 1 };
 
@@ -264,8 +242,6 @@ impl Cpu {
             }
             // VX >>= 1
             (8, _, _, 6) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] = self.v_reg[y];
                 let lsb = self.v_reg[x] & 1;
                 self.v_reg[x] >>= 1;
@@ -273,9 +249,6 @@ impl Cpu {
             }
             // VX = VY - VX
             (8, _, _, 7) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
-
                 let (new_vx, borrow) = self.v_reg[y].overflowing_sub(self.v_reg[x]);
                 let new_vf = if borrow { 0 } else { 1 };
 
@@ -284,8 +257,6 @@ impl Cpu {
             }
             // VX <<= 1
             (8, _, _, 0xE) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 self.v_reg[x] = self.v_reg[y];
                 let msb = (self.v_reg[x] >> 7) & 1;
                 self.v_reg[x] <<= 1;
@@ -293,26 +264,20 @@ impl Cpu {
             }
             // Skip if VX != VY
             (9, _, _, 0) => {
-                let x = digit_2 as usize;
-                let y = digit_3 as usize;
                 if self.v_reg[x] != self.v_reg[y] {
                     self.pc += 2;
                 }
             }
             // I = NNN
             (0xA, _, _, _) => {
-                let nnn = op & 0xFFF;
                 self.i_reg = nnn;
             }
             // Jump to V0 + NNN
             (0xB, _, _, _) => {
-                let nnn = op & 0xFFF;
                 self.pc = (self.v_reg[0] as u16) + nnn;
             }
             // VX = rand() & NN
             (0xC, _, _, _) => {
-                let x = digit_2 as usize;
-                let nn = (op & 0xFF) as u8;
                 let rng: u8 = random();
                 self.v_reg[x] = rng & nn;
             }
@@ -358,7 +323,6 @@ impl Cpu {
             }
             // Skip if Key Pressed
             (0xE, _, 9, 0xE) => {
-                let x = digit_2 as usize;
                 let vx = self.v_reg[x];
                 let key = self.keys[vx as usize];
                 if key {
@@ -367,7 +331,6 @@ impl Cpu {
             }
             // Skip if Key Not Pressed
             (0xE, _, 0xA, 1) => {
-                let x = digit_2 as usize;
                 let vx = self.v_reg[x];
                 let key = self.keys[vx as usize];
                 if !key {
@@ -376,12 +339,10 @@ impl Cpu {
             }
             // VX = DT
             (0xF, _, 0, 7) => {
-                let x = digit_2 as usize;
                 self.v_reg[x] = self.delay_t;
             }
             // Wait for Key Press
             (0xF, _, 0, 0xA) => {
-                let x = digit_2 as usize;
                 let mut released = false;
                 for i in 0..self.keys.len() {
                     if !self.keys[i] && self.prev_keys[i] {
@@ -398,29 +359,24 @@ impl Cpu {
             }
             // DT = VX
             (0xF, _, 1, 5) => {
-                let x = digit_2 as usize;
                 self.delay_t = self.v_reg[x];
             }
             // ST = VX
             (0xF, _, 1, 8) => {
-                let x = digit_2 as usize;
                 self.sound_t = self.v_reg[x];
             }
             // I += VX
             (0xF, _, 1, 0xE) => {
-                let x = digit_2 as usize;
                 let vx = self.v_reg[x] as u16;
                 self.i_reg = self.i_reg.wrapping_add(vx);
             }
             // Set I to Font Address
             (0xF, _, 2, 9) => {
-                let x = digit_2 as usize;
                 let char = self.v_reg[x] as u16;
                 self.i_reg = char * 5;
             }
             // I = BCD of VX
             (0xF, _, 3, 3) => {
-                let x = digit_2 as usize;
                 let vx = self.v_reg[x];
 
                 // Get the hundreds digit of VX
@@ -436,7 +392,6 @@ impl Cpu {
             }
             // Store V0 to VX into I
             (0xF, _, 5, 5) => {
-                let x = digit_2 as usize;
                 for idx in 0..=x {
                     self.ram[self.i_reg as usize] = self.v_reg[idx];
                     self.i_reg += 1;
@@ -444,7 +399,6 @@ impl Cpu {
             }
             // Load I into V0 to VX
             (0xF, _, 6, 5) => {
-                let x = digit_2 as usize;
                 for idx in 0..=x {
                     self.v_reg[idx] = self.ram[self.i_reg as usize];
                     self.i_reg += 1;
