@@ -2,7 +2,7 @@ pub mod audio;
 pub mod config;
 
 pub use audio::AudioManager;
-pub use config::Chip8Variant;
+pub use config::{Chip8Variant, DisplayMode};
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
@@ -46,7 +46,9 @@ pub struct Cpu {
     ram: [u8; RAM_SIZE],
     // monochrome display only requires 1 bit values (boolean)
     // for colors (i.e., black is false, white is true)
-    screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT],
+    screen: Vec<bool>,
+    screen_width: usize,
+    screen_height: usize,
     // 8-bit registers
     v_reg: [u8; NUM_V_REGS],
     // 16-bit indexing register
@@ -65,6 +67,7 @@ pub struct Cpu {
     sound_t: u8,
     audio: AudioManager,
     variant: Chip8Variant,
+    display_mode: DisplayMode,
 }
 
 // starting address
@@ -75,7 +78,9 @@ impl Cpu {
         let mut new_cpu = Self {
             pc: START_ADDR,
             ram: [0; RAM_SIZE],
-            screen: [false; SCREEN_WIDTH * SCREEN_HEIGHT],
+            screen: vec![false; SCREEN_WIDTH * SCREEN_HEIGHT],
+            screen_width: SCREEN_WIDTH,
+            screen_height: SCREEN_HEIGHT,
             v_reg: [0; NUM_V_REGS],
             i_reg: 0,
             sp: 0,
@@ -86,6 +91,7 @@ impl Cpu {
             sound_t: 0,
             audio,
             variant,
+            display_mode: DisplayMode::LoRes,
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -96,7 +102,9 @@ impl Cpu {
     pub fn reset(&mut self) {
         self.pc = START_ADDR;
         self.ram = [0; RAM_SIZE];
-        self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
+        self.screen = vec![false; SCREEN_WIDTH * SCREEN_HEIGHT];
+        self.screen_width = SCREEN_WIDTH;
+        self.screen_height = SCREEN_HEIGHT;
         self.v_reg = [0; NUM_V_REGS];
         self.i_reg = 0;
         self.sp = 0;
@@ -106,6 +114,7 @@ impl Cpu {
         self.delay_t = 0;
         self.sound_t = 0;
         self.audio.stop_beep();
+        self.display_mode = DisplayMode::LoRes;
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
     }
 
@@ -168,7 +177,7 @@ impl Cpu {
                 (0x0, 0x0, 0x0) => return,
                 // 00E0 - Clear screen
                 (0x0, 0xE, 0x0) => {
-                    self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
+                    self.screen = vec![false; SCREEN_WIDTH * SCREEN_HEIGHT];
                 }
                 // 00EE - Return from subroutine
                 (0x0, 0xE, 0xE) => {
