@@ -1,6 +1,8 @@
 pub mod audio;
+pub mod config;
 
 pub use audio::AudioManager;
+pub use config::Chip8Variant;
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
@@ -62,13 +64,14 @@ pub struct Cpu {
     // 8-bit sound timer register
     sound_t: u8,
     audio: AudioManager,
+    variant: Chip8Variant,
 }
 
 // starting address
 const START_ADDR: u16 = 0x200;
 
 impl Cpu {
-    pub fn new(audio: AudioManager) -> Self {
+    pub fn new(audio: AudioManager, variant: Chip8Variant) -> Self {
         let mut new_cpu = Self {
             pc: START_ADDR,
             ram: [0; RAM_SIZE],
@@ -82,6 +85,7 @@ impl Cpu {
             delay_t: 0,
             sound_t: 0,
             audio,
+            variant,
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);

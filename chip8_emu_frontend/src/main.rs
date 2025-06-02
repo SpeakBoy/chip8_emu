@@ -82,7 +82,9 @@ async fn main() {
 
     let audio = AudioManager::new().await;
 
-    let mut chip8 = Cpu::new(audio);
+    let variant = Chip8Variant::Chip8;
+
+    let mut chip8 = Cpu::new(audio, variant);
 
     let mut rom = File::open(file.unwrap()).expect("Unable to open file");
     let mut buffer = Vec::new();
