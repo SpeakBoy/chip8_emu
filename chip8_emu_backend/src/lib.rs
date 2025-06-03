@@ -175,6 +175,7 @@ impl Cpu {
             0x0 => match (digit_2, digit_3, digit_4) {
                 // 0000 - NOOP
                 (0x0, 0x0, 0x0) => return,
+                (0x0, 0xC, _) => println!("{:#x}", op),
                 // 00E0 - Clear screen
                 (0x0, 0xE, 0x0) => {
                     self.screen = vec![false; SCREEN_WIDTH * SCREEN_HEIGHT];
@@ -183,6 +184,11 @@ impl Cpu {
                 (0x0, 0xE, 0xE) => {
                     self.pc = self.pop();
                 }
+                (0x0, 0xF, 0xB) => println!("{:#x}", op),
+                (0x0, 0xF, 0xC) => println!("{:#x}", op),
+                (0x0, 0xF, 0xD) => std::process::exit(0),
+                (0x0, 0xF, 0xE) => println!("{:#x}", op),
+                (0x0, 0xF, 0xF) => println!("{:#x}", op),
                 _ => panic!("invalid opcode"),
             },
             0x1 => {
@@ -404,6 +410,7 @@ impl Cpu {
                     let char = self.v_reg[x] as u16;
                     self.i_reg = char * 5;
                 }
+                (0x3, 0x0) => println!("{:#x}", op),
                 // FX33 - I = BCD of VX
                 (0x3, 0x3) => {
                     let vx = self.v_reg[x];
@@ -433,6 +440,8 @@ impl Cpu {
                         self.i_reg += 1;
                     }
                 }
+                (0x7, 0x5) => println!("{:#x}", op),
+                (0x8, 0x5) => println!("{:#x}", op),
                 _ => panic!("invalid opcode"),
             },
             _ => panic!("invalid hexadecimal digit"),
