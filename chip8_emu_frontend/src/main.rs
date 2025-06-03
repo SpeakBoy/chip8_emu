@@ -10,7 +10,6 @@ use std::io::Read;
 const SCALE: i32 = 10;
 const WINDOW_WIDTH: i32 = (SCREEN_WIDTH as i32) * SCALE;
 const WINDOW_HEIGHT: i32 = (SCREEN_HEIGHT as i32) * SCALE;
-const TICKS_PER_FRAME: usize = 8;
 
 const KEYS: [KeyCode; 16] = [
     KeyCode::X,    // 0
@@ -44,7 +43,7 @@ fn draw_screen(cpu: &Cpu) {
     // Clear window and make background black
     clear_background(BLACK);
 
-    let (screen_buf, screen_width, _) = cpu.get_display();
+    let (screen_buf, screen_width, _, _) = cpu.get_display();
 
     for (i, pixel) in screen_buf.iter().enumerate() {
         if *pixel {
@@ -92,7 +91,7 @@ async fn main() {
     chip8.load(&buffer);
 
     // Initalize prev_res to the correct
-    let mut prev_res = (SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut prev_res = DisplayMode::LoRes;
 
     'gameloop: loop {
         if is_quit_requested() || is_key_pressed(KeyCode::Escape) {
@@ -103,15 +102,20 @@ async fn main() {
             chip8.keypress(key, pressed);
         }
 
-        for _ in 0..TICKS_PER_FRAME {
+        let (_, w, h, display_mode) = chip8.get_display();
+
+        let ticks_per_frame = config::ticks_per_frame(variant, display_mode);
+
+        for _ in 0..ticks_per_frame {
             chip8.tick();
         }
         chip8.tick_timers();
 
-        let (_, w, h) = chip8.get_display();
-        if (w, h) != prev_res {
+        // Update display size when changing from LoRes to HiRes
+
+        if display_mode != prev_res {
             request_new_screen_size((w as i32 * SCALE) as f32, (h as i32 * SCALE) as f32);
-            prev_res = (w, h);
+            prev_res = display_mode;
         }
 
         draw_screen(&chip8);

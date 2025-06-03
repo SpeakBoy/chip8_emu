@@ -39,3 +39,10 @@ pub enum DisplayMode {
     LoRes,
     HiRes,
 }
+
+pub fn ticks_per_frame(variant: Chip8Variant, display_mode: DisplayMode) -> usize {
+    match (variant, display_mode) {
+        (Chip8Variant::SuperChip, _) => 16,
+        (_, _) => 8,
+    }
+}

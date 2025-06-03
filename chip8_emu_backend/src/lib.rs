@@ -142,8 +142,13 @@ impl Cpu {
         }
     }
 
-    pub fn get_display(&self) -> (&[bool], usize, usize) {
-        (&self.screen, self.screen_width, self.screen_height)
+    pub fn get_display(&self) -> (&[bool], usize, usize, DisplayMode) {
+        (
+            &self.screen,
+            self.screen_width,
+            self.screen_height,
+            self.display_mode,
+        )
     }
 
     pub fn keypress(&mut self, idx: usize, pressed: bool) {
