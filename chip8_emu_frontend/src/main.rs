@@ -82,7 +82,7 @@ async fn main() {
 
     let audio = AudioManager::new().await;
 
-    let variant = Chip8Variant::Chip8;
+    let variant = Chip8Variant::SuperChip;
 
     let mut chip8 = Cpu::new(audio, variant);
 

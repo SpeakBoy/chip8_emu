@@ -2,7 +2,7 @@ pub mod audio;
 pub mod config;
 
 pub use audio::AudioManager;
-pub use config::{Chip8Variant, DisplayMode};
+pub use config::{Chip8Variant, DisplayMode, Quirks};
 use rand::random;
 
 // 16 sprites for each hexadecimal digit of size 5 bytes each
@@ -68,6 +68,7 @@ pub struct Cpu {
     audio: AudioManager,
     variant: Chip8Variant,
     display_mode: DisplayMode,
+    quirks: Quirks,
 }
 
 // starting address
@@ -75,6 +76,8 @@ const START_ADDR: u16 = 0x200;
 
 impl Cpu {
     pub fn new(audio: AudioManager, variant: Chip8Variant) -> Self {
+        let quirks = Quirks::new_variant(variant);
+
         let mut new_cpu = Self {
             pc: START_ADDR,
             ram: [0; RAM_SIZE],
@@ -92,6 +95,7 @@ impl Cpu {
             audio,
             variant,
             display_mode: DisplayMode::LoRes,
+            quirks,
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -237,17 +241,23 @@ impl Cpu {
                 // 8XY1 - VX |= VY (OR)
                 0x1 => {
                     self.v_reg[x] |= self.v_reg[y];
-                    self.v_reg[0xF] = 0;
+                    if self.quirks.vf_reset {
+                        self.v_reg[0xF] = 0;
+                    }
                 }
                 // 8XY2 - VX &= VY (AND)
                 0x2 => {
                     self.v_reg[x] &= self.v_reg[y];
-                    self.v_reg[0xF] = 0;
+                    if self.quirks.vf_reset {
+                        self.v_reg[0xF] = 0;
+                    }
                 }
                 // 8XY3 - VX ^= VY (XOR)
                 0x3 => {
                     self.v_reg[x] ^= self.v_reg[y];
-                    self.v_reg[0xF] = 0;
+                    if self.quirks.vf_reset {
+                        self.v_reg[0xF] = 0;
+                    }
                 }
                 // 8XY4 - VX += VY
                 0x4 => {
