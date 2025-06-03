@@ -162,6 +162,16 @@ impl Cpu {
         self.ram[start..end].copy_from_slice(data);
     }
 
+    fn push(&mut self, val: u16) {
+        self.stack[self.sp as usize] = val;
+        self.sp += 1;
+    }
+
+    fn pop(&mut self) -> u16 {
+        self.sp -= 1;
+        self.stack[self.sp as usize]
+    }
+
     fn fetch(&mut self) -> u16 {
         let first_byte = self.ram[self.pc as usize] as u16;
         let second_byte = self.ram[(self.pc + 1) as usize] as u16;
@@ -184,6 +194,7 @@ impl Cpu {
             0x0 => match (digit_2, digit_3, digit_4) {
                 // 0000 - NOOP
                 (0x0, 0x0, 0x0) => return,
+                // 0XCN - TODO
                 (0x0, 0xC, _) => println!("{:#x}", op),
                 // 00E0 - Clear screen
                 (0x0, 0xE, 0x0) => {
@@ -193,31 +204,32 @@ impl Cpu {
                 (0x0, 0xE, 0xE) => {
                     self.pc = self.pop();
                 }
+                // 00FB - TODO
                 (0x0, 0xF, 0xB) => println!("{:#x}", op),
+                // 00FC - TODO
                 (0x0, 0xF, 0xC) => println!("{:#x}", op),
                 // 00FD - Exit interpreter
                 (0x0, 0xF, 0xD) => std::process::exit(0),
+                // 00FE - Disable HiRes Graphics Mode
                 (0x0, 0xF, 0xE) => {
                     if self.variant == Chip8Variant::SuperChip {
                         self.display_mode = DisplayMode::LoRes;
                         self.screen_width = 64;
                         self.screen_height = 32;
                         self.screen = vec![false; self.screen_width * self.screen_height];
-                        println!("Switched to LoRes mode!");
                     } else {
                         panic!("invalid opcode")
                     }
                 }
+                // 00FF - Enable HiRes Graphics Mode
                 (0x0, 0xF, 0xF) => {
                     if self.variant == Chip8Variant::SuperChip {
                         self.display_mode = DisplayMode::HiRes;
                         self.screen_width = 128;
                         self.screen_height = 64;
                         self.screen = vec![false; self.screen_width * self.screen_height];
-                        println!("{}", self.screen.len());
-                        println!("Switched to HiRes mode!");
                     } else {
-                        panic!("invalid opcode {op}")
+                        panic!("invalid opcode")
                     }
                 }
                 _ => panic!("invalid opcode"),
@@ -357,7 +369,8 @@ impl Cpu {
                 self.v_reg[x] = rng & nn;
             }
             0xD => {
-                // DXYN - Draw Sprite
+                // DXYN - Draw 8xN Sprite
+                // DXY0 - Draw 16x16 Sprite in HiRes Mode
 
                 // Get (x, y) coords for sprite, wrap before drawing.
                 let x_coord = self.v_reg[digit_2 as usize] as u16 % self.screen_width as u16;
@@ -477,6 +490,7 @@ impl Cpu {
                     let char = self.v_reg[x] as u16;
                     self.i_reg = char * 5;
                 }
+                // FX30 - TODO
                 (0x3, 0x0) => println!("{:#x}", op),
                 // FX33 - I = BCD of VX
                 (0x3, 0x3) => {
@@ -519,21 +533,13 @@ impl Cpu {
                         }
                     }
                 }
+                // FX75 - TODO
                 (0x7, 0x5) => println!("{:#x}", op),
+                // FX85 - TODO
                 (0x8, 0x5) => println!("{:#x}", op),
                 _ => panic!("invalid opcode"),
             },
             _ => panic!("invalid hexadecimal digit"),
         }
-    }
-
-    fn push(&mut self, val: u16) {
-        self.stack[self.sp as usize] = val;
-        self.sp += 1;
-    }
-
-    fn pop(&mut self) -> u16 {
-        self.sp -= 1;
-        self.stack[self.sp as usize]
     }
 }

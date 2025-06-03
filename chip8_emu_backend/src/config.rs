@@ -1,9 +1,12 @@
+// Enumerable containing Chip 8 Variants
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Chip8Variant {
     Chip8,
     SuperChip,
 }
 
+// Quirks struct that contains all the differences in instructions
+// between Chip 8 Variants
 pub struct Quirks {
     // 8XY1, 8XY2, 8XY3 Quirk
     pub vf_reset: bool,
@@ -34,15 +37,17 @@ impl Quirks {
     }
 }
 
+// Enumerable containing resolution modes
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DisplayMode {
     LoRes,
     HiRes,
 }
 
-pub fn ticks_per_frame(variant: Chip8Variant, display_mode: DisplayMode) -> usize {
-    match (variant, display_mode) {
-        (Chip8Variant::SuperChip, _) => 16,
-        (_, _) => 8,
+// Set the ticks per frame based on Chip 8 Variant
+pub fn ticks_per_frame(variant: Chip8Variant) -> usize {
+    match variant {
+        Chip8Variant::SuperChip => 16,
+        _ => 8,
     }
 }

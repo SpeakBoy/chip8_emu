@@ -1,10 +1,7 @@
 use chip8_emu_backend::*;
 use macroquad::prelude::*;
-use rfd::FileDialog;
-use rfd::MessageDialog;
-use rfd::MessageLevel;
-use std::fs::File;
-use std::io::Read;
+use rfd::{FileDialog, MessageDialog, MessageLevel};
+use std::{fs::File, io::Read};
 
 // Scale window to accomodate for larger screens.
 const SCALE: i32 = 10;
@@ -79,18 +76,21 @@ async fn main() {
         return;
     }
 
+    let file = file.unwrap();
+
     let audio = AudioManager::new().await;
 
+    // TODO : Allow Chip 8 Variant to be decided by input
     let variant = Chip8Variant::SuperChip;
 
     let mut chip8 = Cpu::new(audio, variant);
 
-    let mut rom = File::open(file.unwrap()).expect("Unable to open file");
+    let mut rom = File::open(file).expect("Unable to open file");
     let mut buffer = Vec::new();
     rom.read_to_end(&mut buffer).unwrap();
     chip8.load(&buffer);
 
-    // Initalize prev_res to the correct
+    // Initalize prev_res to the default resolution (lores)
     let mut prev_res = DisplayMode::LoRes;
 
     'gameloop: loop {
@@ -104,21 +104,21 @@ async fn main() {
 
         let (_, w, h, display_mode) = chip8.get_display();
 
-        let ticks_per_frame = config::ticks_per_frame(variant, display_mode);
+        let ticks_per_frame = config::ticks_per_frame(variant);
 
         for _ in 0..ticks_per_frame {
             chip8.tick();
         }
         chip8.tick_timers();
 
-        // Update display size when changing from LoRes to HiRes
-
+        // Update display size when changing from LoRes to HiRes (and vice versa)
         if display_mode != prev_res {
             request_new_screen_size((w as i32 * SCALE) as f32, (h as i32 * SCALE) as f32);
             prev_res = display_mode;
         }
 
         draw_screen(&chip8);
+
         next_frame().await;
     }
 }
