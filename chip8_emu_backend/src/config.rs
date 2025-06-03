@@ -11,6 +11,8 @@ pub struct Quirks {
     pub memory: bool,
     // 8XY6, 8XYE Quirk
     pub shifting: bool,
+    // BNNN Quirk
+    pub jumping: bool,
 }
 
 impl Quirks {
@@ -20,11 +22,13 @@ impl Quirks {
                 vf_reset: true,
                 memory: true,
                 shifting: false,
+                jumping: false,
             },
             Chip8Variant::SuperChip => Self {
                 vf_reset: false,
                 memory: false,
                 shifting: true,
+                jumping: true,
             },
         }
     }

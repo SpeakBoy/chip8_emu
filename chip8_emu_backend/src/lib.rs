@@ -319,7 +319,11 @@ impl Cpu {
             }
             0xB => {
                 // BNNN - Jump to V0 + NNN
-                self.pc = (self.v_reg[0] as u16) + nnn;
+                if self.quirks.jumping {
+                    self.pc = (self.v_reg[x] as u16) + nnn;
+                } else {
+                    self.pc = (self.v_reg[0] as u16) + nnn;
+                }
             }
             0xC => {
                 // CXNN - rand() & NN
