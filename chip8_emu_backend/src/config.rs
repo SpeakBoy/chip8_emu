@@ -8,7 +8,9 @@ pub struct Quirks {
     // 8XY1, 8XY2, 8XY3 Quirk
     pub vf_reset: bool,
     // FX55, FX65 Quirk
-    pub save_load_increment_i: bool,
+    pub memory: bool,
+    // 8XY6, 8XYE Quirk
+    pub shifting: bool,
 }
 
 impl Quirks {
@@ -16,11 +18,13 @@ impl Quirks {
         match variant {
             Chip8Variant::Chip8 => Self {
                 vf_reset: true,
-                save_load_increment_i: true,
+                memory: true,
+                shifting: false,
             },
             Chip8Variant::SuperChip => Self {
                 vf_reset: false,
-                save_load_increment_i: false,
+                memory: false,
+                shifting: true,
             },
         }
     }

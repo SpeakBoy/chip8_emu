@@ -278,7 +278,9 @@ impl Cpu {
                 }
                 // 8XY6 - VX >>= 1
                 0x6 => {
-                    self.v_reg[x] = self.v_reg[y];
+                    if !self.quirks.shifting {
+                        self.v_reg[x] = self.v_reg[y];
+                    }
                     let lsb = self.v_reg[x] & 1;
                     self.v_reg[x] >>= 1;
                     self.v_reg[0xF] = lsb;
@@ -293,7 +295,9 @@ impl Cpu {
                 }
                 // 8XYE - VX <<= 1
                 0xE => {
-                    self.v_reg[x] = self.v_reg[y];
+                    if !self.quirks.shifting {
+                        self.v_reg[x] = self.v_reg[y];
+                    }
                     let msb = (self.v_reg[x] >> 7) & 1;
                     self.v_reg[x] <<= 1;
                     self.v_reg[0xF] = msb;
@@ -439,7 +443,7 @@ impl Cpu {
                 }
                 // FX55 - Store V0 to VX into I
                 (0x5, 0x5) => {
-                    if self.quirks.save_load_increment_i {
+                    if self.quirks.memory {
                         for idx in 0..=x {
                             self.ram[self.i_reg as usize] = self.v_reg[idx];
                             self.i_reg += 1;
@@ -452,7 +456,7 @@ impl Cpu {
                 }
                 // FX65 - Load I into V0 to VX
                 (0x6, 0x5) => {
-                    if self.quirks.save_load_increment_i {
+                    if self.quirks.memory {
                         for idx in 0..=x {
                             self.v_reg[idx] = self.ram[self.i_reg as usize];
                             self.i_reg += 1;
