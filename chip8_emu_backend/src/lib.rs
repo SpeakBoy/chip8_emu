@@ -116,6 +116,7 @@ impl Cpu {
         };
 
         new_cpu.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
+        new_cpu.ram[0x100..0x100 + HIRES_FONTSET_SIZE].copy_from_slice(&HIRES_FONTSET);
 
         new_cpu
     }
@@ -138,6 +139,7 @@ impl Cpu {
         self.audio.stop_beep();
         self.display_mode = DisplayMode::LoRes;
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
+        self.ram[0x100..0x100 + HIRES_FONTSET_SIZE].copy_from_slice(&HIRES_FONTSET);
     }
 
     // Perform one CPU cycle (tick)
@@ -514,8 +516,15 @@ impl Cpu {
                     let char = self.v_reg[x] as u16;
                     self.i_reg = char * 5;
                 }
-                // FX30 - TODO
-                (0x3, 0x0) => println!("{:#x}", op),
+                // FX30 - Set I to HiRes Sprite for Digit VX (0 - 9)
+                (0x3, 0x0) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        let char = self.v_reg[x] as u16;
+                        self.i_reg = 0x100 + (char * 10) as u16;
+                    } else {
+                        println!("invalid opcode")
+                    }
+                }
                 // FX33 - I = BCD of VX
                 (0x3, 0x3) => {
                     let vx = self.v_reg[x];
