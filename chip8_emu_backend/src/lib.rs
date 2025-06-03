@@ -218,8 +218,6 @@ impl Cpu {
 
         match digit_1 {
             0x0 => match (digit_2, digit_3, digit_4) {
-                // 0000 - NOOP
-                (0x0, 0x0, 0x0) => return,
                 // 0XCN - TODO
                 (0x0, 0xC, _) => println!("{:#x}", op),
                 // 00E0 - Clear screen
