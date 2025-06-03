@@ -190,6 +190,7 @@ impl Cpu {
                 }
                 (0x0, 0xF, 0xB) => println!("{:#x}", op),
                 (0x0, 0xF, 0xC) => println!("{:#x}", op),
+                // 00FD - Exit interpreter
                 (0x0, 0xF, 0xD) => std::process::exit(0),
                 (0x0, 0xF, 0xE) => println!("{:#x}", op),
                 (0x0, 0xF, 0xF) => println!("{:#x}", op),
@@ -438,16 +439,28 @@ impl Cpu {
                 }
                 // FX55 - Store V0 to VX into I
                 (0x5, 0x5) => {
-                    for idx in 0..=x {
-                        self.ram[self.i_reg as usize] = self.v_reg[idx];
-                        self.i_reg += 1;
+                    if self.quirks.save_load_increment_i {
+                        for idx in 0..=x {
+                            self.ram[self.i_reg as usize] = self.v_reg[idx];
+                            self.i_reg += 1;
+                        }
+                    } else {
+                        for idx in 0..=x {
+                            self.ram[self.i_reg as usize + idx] = self.v_reg[idx];
+                        }
                     }
                 }
                 // FX65 - Load I into V0 to VX
                 (0x6, 0x5) => {
-                    for idx in 0..=x {
-                        self.v_reg[idx] = self.ram[self.i_reg as usize];
-                        self.i_reg += 1;
+                    if self.quirks.save_load_increment_i {
+                        for idx in 0..=x {
+                            self.v_reg[idx] = self.ram[self.i_reg as usize];
+                            self.i_reg += 1;
+                        }
+                    } else {
+                        for idx in 0..=x {
+                            self.v_reg[idx] = self.ram[self.i_reg as usize + idx];
+                        }
                     }
                 }
                 (0x7, 0x5) => println!("{:#x}", op),
