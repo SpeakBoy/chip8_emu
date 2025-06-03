@@ -75,6 +75,7 @@ pub struct Cpu {
 const START_ADDR: u16 = 0x200;
 
 impl Cpu {
+    // Initalize CPU state
     pub fn new(audio: AudioManager, variant: Chip8Variant) -> Self {
         let quirks = Quirks::new_variant(variant);
 
@@ -103,6 +104,7 @@ impl Cpu {
         new_cpu
     }
 
+    // Reset CPU state
     pub fn reset(&mut self) {
         self.pc = START_ADDR;
         self.ram = [0; RAM_SIZE];
@@ -122,6 +124,7 @@ impl Cpu {
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
     }
 
+    // Perform one CPU cycle (tick)
     pub fn tick(&mut self) {
         // Fetch
         let op = self.fetch();
@@ -129,11 +132,13 @@ impl Cpu {
         self.execute(op);
     }
 
+    // Decrement timers at ~60Hz
     pub fn tick_timers(&mut self) {
         if self.delay_t > 0 {
             self.delay_t -= 1;
         }
 
+        // Play audio if sound_t > 0
         if self.sound_t > 0 {
             self.audio.start_beep();
             self.sound_t -= 1;
@@ -142,6 +147,7 @@ impl Cpu {
         }
     }
 
+    // Return screen buffer and other relevant display information
     pub fn get_display(&self) -> (&[bool], usize, usize, DisplayMode) {
         (
             &self.screen,
@@ -152,10 +158,12 @@ impl Cpu {
     }
 
     pub fn keypress(&mut self, idx: usize, pressed: bool) {
+        // Track key state changes for FX0A
         self.prev_keys[idx] = self.keys[idx];
         self.keys[idx] = pressed;
     }
 
+    // Load external ROM data starting at 0x200
     pub fn load(&mut self, data: &[u8]) {
         let start = START_ADDR as usize;
         let end = (START_ADDR as usize) + data.len();
