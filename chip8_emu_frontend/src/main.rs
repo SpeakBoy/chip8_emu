@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::Read;
 
 // Scale window to accomodate for larger screens.
-const SCALE: i32 = 15;
+const SCALE: i32 = 10;
 const WINDOW_WIDTH: i32 = (SCREEN_WIDTH as i32) * SCALE;
 const WINDOW_HEIGHT: i32 = (SCREEN_HEIGHT as i32) * SCALE;
 const TICKS_PER_FRAME: usize = 8;
@@ -44,13 +44,13 @@ fn draw_screen(cpu: &Cpu) {
     // Clear window and make background black
     clear_background(BLACK);
 
-    let screen_buf = cpu.get_display();
+    let (screen_buf, screen_width, _) = cpu.get_display();
 
     for (i, pixel) in screen_buf.iter().enumerate() {
         if *pixel {
             // Convert 1D array's index into 2D (x, y) position
-            let x = (i % SCREEN_WIDTH) as i32;
-            let y = (i / SCREEN_WIDTH) as i32;
+            let x = (i % screen_width) as i32;
+            let y = (i / screen_width) as i32;
 
             // Draw rectangle at (x, y), scaled up by SCALE
             draw_rectangle(
@@ -91,6 +91,9 @@ async fn main() {
     rom.read_to_end(&mut buffer).unwrap();
     chip8.load(&buffer);
 
+    // Initalize prev_res to the correct
+    let mut prev_res = (SCREEN_WIDTH, SCREEN_HEIGHT);
+
     'gameloop: loop {
         if is_quit_requested() || is_key_pressed(KeyCode::Escape) {
             break 'gameloop;
@@ -104,6 +107,13 @@ async fn main() {
             chip8.tick();
         }
         chip8.tick_timers();
+
+        let (_, w, h) = chip8.get_display();
+        if (w, h) != prev_res {
+            request_new_screen_size((w as i32 * SCALE) as f32, (h as i32 * SCALE) as f32);
+            prev_res = (w, h);
+        }
+
         draw_screen(&chip8);
         next_frame().await;
     }

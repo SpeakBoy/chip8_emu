@@ -142,8 +142,8 @@ impl Cpu {
         }
     }
 
-    pub fn get_display(&self) -> &[bool] {
-        &self.screen
+    pub fn get_display(&self) -> (&[bool], usize, usize) {
+        (&self.screen, self.screen_width, self.screen_height)
     }
 
     pub fn keypress(&mut self, idx: usize, pressed: bool) {
@@ -182,7 +182,7 @@ impl Cpu {
                 (0x0, 0xC, _) => println!("{:#x}", op),
                 // 00E0 - Clear screen
                 (0x0, 0xE, 0x0) => {
-                    self.screen = vec![false; SCREEN_WIDTH * SCREEN_HEIGHT];
+                    self.screen = vec![false; self.screen_width * self.screen_height];
                 }
                 // 00EE - Return from subroutine
                 (0x0, 0xE, 0xE) => {
@@ -192,8 +192,29 @@ impl Cpu {
                 (0x0, 0xF, 0xC) => println!("{:#x}", op),
                 // 00FD - Exit interpreter
                 (0x0, 0xF, 0xD) => std::process::exit(0),
-                (0x0, 0xF, 0xE) => println!("{:#x}", op),
-                (0x0, 0xF, 0xF) => println!("{:#x}", op),
+                (0x0, 0xF, 0xE) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        self.display_mode = DisplayMode::LoRes;
+                        self.screen_width = 64;
+                        self.screen_height = 32;
+                        self.screen = vec![false; self.screen_width * self.screen_height];
+                        println!("Switched to LoRes mode!");
+                    } else {
+                        panic!("invalid opcode")
+                    }
+                }
+                (0x0, 0xF, 0xF) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        self.display_mode = DisplayMode::HiRes;
+                        self.screen_width = 128;
+                        self.screen_height = 64;
+                        self.screen = vec![false; self.screen_width * self.screen_height];
+                        println!("{}", self.screen.len());
+                        println!("Switched to HiRes mode!");
+                    } else {
+                        panic!("invalid opcode {op}")
+                    }
+                }
                 _ => panic!("invalid opcode"),
             },
             0x1 => {
@@ -334,33 +355,55 @@ impl Cpu {
                 // DXYN - Draw Sprite
 
                 // Get (x, y) coords for sprite, wrap before drawing.
-                let x_coord = self.v_reg[digit_2 as usize] as u16 % SCREEN_WIDTH as u16;
-                let y_coord = self.v_reg[digit_3 as usize] as u16 % SCREEN_HEIGHT as u16;
-                // Last digit determines height of sprite
-                let num_rows = digit_4;
+                let x_coord = self.v_reg[digit_2 as usize] as u16 % self.screen_width as u16;
+                let y_coord = self.v_reg[digit_3 as usize] as u16 % self.screen_height as u16;
+                // If in HiRes Mode, with a N value of 0, then draw 16x16 sprite
+                // Else, draw 8xN sprite with N (digit_4) height
+                let (num_rows, num_cols) =
+                    if self.display_mode == DisplayMode::HiRes && digit_4 == 0x0 {
+                        (16, 16)
+                    } else {
+                        (digit_4, 8)
+                    };
                 // Keep track if any pixels were flipped
                 let mut flipped = false;
                 // Iterate over each row of the sprite
                 for y_line in 0..num_rows {
                     let y = y_coord + y_line;
-                    if y >= SCREEN_HEIGHT as u16 {
+                    if y >= self.screen_height as u16 {
                         continue; // Clip bottom
                     }
 
                     // Determine where row's data is stored
-                    let addr = self.i_reg + y_line as u16;
-                    let pixels = self.ram[addr as usize];
+                    let addr = if num_cols == 16 {
+                        (self.i_reg + y_line * 2) as u16
+                    } else {
+                        (self.i_reg + y_line) as u16
+                    };
+                    let pixels = if num_cols == 16 {
+                        let first_byte = self.ram[addr as usize];
+                        let second_byte = self.ram[(addr + 1) as usize];
+                        (first_byte as u16) << 8 | (second_byte as u16)
+                    } else {
+                        self.ram[addr as usize] as u16
+                    };
                     // Iterate over column in current row
-                    for x_line in 0..8 {
-                        // Use mask to fetch current pixel's bit. Flip if a 1
-                        if (pixels & (0b1000_0000 >> x_line)) != 0 {
-                            let x = x_coord + x_line;
-                            if x >= SCREEN_WIDTH as u16 {
-                                continue; // Clip right
-                            }
+                    for x_line in 0..num_cols {
+                        let x = x_coord + x_line;
+                        if x >= self.screen_width as u16 {
+                            continue; // Clip right
+                        }
 
+                        // Use mask to fetch current pixel's bit. Flip if a 1
+                        let bit = if num_cols == 16 {
+                            (pixels >> (15 - x_line)) & 1 != 0
+                        } else {
+                            (pixels >> (7 - x_line)) & 1 != 0
+                        };
+
+                        if bit {
                             // Get pixel's index for the 1D screen array
-                            let idx = x as usize + SCREEN_WIDTH * y as usize;
+                            let idx = x as usize + self.screen_width * y as usize;
                             // Check if pixel will be flipped and set
                             flipped |= self.screen[idx];
                             self.screen[idx] ^= true;
