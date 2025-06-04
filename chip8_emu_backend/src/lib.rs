@@ -248,10 +248,48 @@ impl Cpu {
                 (0x0, 0xE, 0xE) => {
                     self.pc = self.pop();
                 }
-                // 00FB - TODO
-                (0x0, 0xF, 0xB) => println!("{:#x}", op),
-                // 00FC - TODO
-                (0x0, 0xF, 0xC) => println!("{:#x}", op),
+                // 00FB - Scroll display right 4 pixels
+                (0x0, 0xF, 0xB) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        for x in (0..self.screen_width - 4).rev() {
+                            for y in 0..self.screen_height {
+                                let from = x + self.screen_width * y;
+                                let to = x + 4 + self.screen_width * y;
+                                self.screen[to] = self.screen[from];
+                            }
+                        }
+
+                        for x in 0..4 {
+                            for y in 0..self.screen_height {
+                                let idx = x + self.screen_width * y;
+                                self.screen[idx] = false;
+                            }
+                        }
+                    } else {
+                        panic!("invalid opcode")
+                    }
+                }
+                // 00FC - Scroll display left 4 pixels
+                (0x0, 0xF, 0xC) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        for x in 4..self.screen_width {
+                            for y in 0..self.screen_height {
+                                let from = x + self.screen_width * y;
+                                let to = x - 4 + self.screen_width * y;
+                                self.screen[to] = self.screen[from];
+                            }
+                        }
+
+                        for x in (self.screen_width - 4)..self.screen_width {
+                            for y in 0..self.screen_height {
+                                let idx = x + self.screen_width * y;
+                                self.screen[idx] = false;
+                            }
+                        }
+                    } else {
+                        panic!("invalid opcode")
+                    }
+                }
                 // 00FD - Exit interpreter
                 (0x0, 0xF, 0xD) => std::process::exit(0),
                 // 00FE - Disable HiRes Graphics Mode
@@ -540,7 +578,7 @@ impl Cpu {
                         let char = self.v_reg[x] as u16;
                         self.i_reg = 0x100 + (char * 10) as u16;
                     } else {
-                        println!("invalid opcode")
+                        panic!("invalid opcode")
                     }
                 }
                 // FX33 - I = BCD of VX
