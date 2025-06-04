@@ -51,6 +51,7 @@ pub const SCREEN_HEIGHT: usize = 32;
 const RAM_SIZE: usize = 4096;
 // 16 V Registers
 const NUM_V_REGS: usize = 16;
+const NUM_FLAG_REGS: usize = 8;
 const STACK_SIZE: usize = 16;
 // 16 key input
 const NUM_KEYS: usize = 16;
@@ -69,6 +70,8 @@ pub struct Cpu {
     v_reg: [u8; NUM_V_REGS],
     // 16-bit indexing register
     i_reg: u16,
+    // 8 8-bit flag registers for instructions FX75 and FX85
+    flag_reg: [u8; NUM_FLAG_REGS],
     // 16-bit stack pointer
     sp: u16,
     // 16-bit stack
@@ -103,6 +106,7 @@ impl Cpu {
             screen_height: SCREEN_HEIGHT,
             v_reg: [0; NUM_V_REGS],
             i_reg: 0,
+            flag_reg: [0; NUM_FLAG_REGS],
             sp: 0,
             stack: [0; STACK_SIZE],
             keys: [false; NUM_KEYS],
@@ -130,6 +134,7 @@ impl Cpu {
         self.screen_height = SCREEN_HEIGHT;
         self.v_reg = [0; NUM_V_REGS];
         self.i_reg = 0;
+        self.flag_reg = [0; NUM_FLAG_REGS];
         self.sp = 0;
         self.stack = [0; STACK_SIZE];
         self.keys = [false; NUM_KEYS];
@@ -622,10 +627,22 @@ impl Cpu {
                         }
                     }
                 }
-                // FX75 - TODO
-                (0x7, 0x5) => println!("{:#x}", op),
-                // FX85 - TODO
-                (0x8, 0x5) => println!("{:#x}", op),
+                // FX75 - Store V0 to VX into Flag Registers
+                (0x7, 0x5) => {
+                    if x <= 7 {
+                        for idx in 0..=x {
+                            self.flag_reg[idx] = self.v_reg[idx];
+                        }
+                    }
+                }
+                // FX85 - Load Flag Registers into V0 to VX
+                (0x8, 0x5) => {
+                    if x <= 7 {
+                        for idx in 0..=x {
+                            self.v_reg[idx] = self.flag_reg[idx];
+                        }
+                    }
+                }
                 _ => panic!("invalid opcode"),
             },
             _ => panic!("invalid hexadecimal digit"),
