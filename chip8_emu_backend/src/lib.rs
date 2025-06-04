@@ -218,8 +218,28 @@ impl Cpu {
 
         match digit_1 {
             0x0 => match (digit_2, digit_3, digit_4) {
-                // 0XCN - TODO
-                (0x0, 0xC, _) => println!("{:#x}", op),
+                // 0XCN - Scroll display down N pixels
+                (0x0, 0xC, _) => {
+                    if self.variant == Chip8Variant::SuperChip {
+                        let rows_to_scroll = digit_4 as usize;
+                        for y in (0..self.screen_height - rows_to_scroll).rev() {
+                            for x in 0..self.screen_width {
+                                let from = x + self.screen_width * y;
+                                let to = x + self.screen_width * (y + rows_to_scroll);
+                                self.screen[to] = self.screen[from];
+                            }
+                        }
+
+                        for y in 0..rows_to_scroll {
+                            for x in 0..self.screen_width {
+                                let idx = x + self.screen_width * y;
+                                self.screen[idx] = false;
+                            }
+                        }
+                    } else {
+                        panic!("invalid opcode")
+                    }
+                }
                 // 00E0 - Clear screen
                 (0x0, 0xE, 0x0) => {
                     self.screen = vec![false; self.screen_width * self.screen_height];
