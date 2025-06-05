@@ -60,35 +60,65 @@ fn draw_screen(cpu: &Cpu) {
     }
 }
 
+async fn setup() -> Option<(Chip8Variant, Vec<u8>)> {
+    let mut variant: Option<Chip8Variant> = None;
+
+    loop {
+        draw_text("Chip-8 Emulator", 155.9375, 50.0, 50.0, WHITE);
+        draw_text("Press [1] for Chip-8", 188.75, 100.0, 30.0, WHITE);
+        draw_text("Press [2] for SuperChip", 169.0625, 130.0, 30.0, WHITE);
+        draw_text("Press [Enter] to load ROM", 155.9375, 200.0, 30.0, YELLOW);
+
+        if let Some(v) = variant {
+            draw_text(&format!("{:?}", v), 40.0, 280.0, 30.0, GREEN);
+        }
+
+        if is_key_pressed(KeyCode::Key1) {
+            variant = Some(Chip8Variant::Chip8);
+        } else if is_key_pressed(KeyCode::Key2) {
+            variant = Some(Chip8Variant::SuperChip);
+        }
+
+        if is_key_pressed(KeyCode::Enter) {
+            if let Some(v) = variant {
+                let file = FileDialog::new()
+                    .add_filter("CHIP-8 ROM", &["ch8", "rom"])
+                    .add_filter("All Files", &["*"])
+                    .pick_file();
+
+                if let Some(path) = file {
+                    let mut rom = File::open(path).expect("Unable to open file");
+                    let mut buffer = Vec::new();
+                    rom.read_to_end(&mut buffer).unwrap();
+                    return Some((v, buffer));
+                } else {
+                    MessageDialog::new()
+                        .set_title("Error")
+                        .set_description("No ROM selected!")
+                        .set_level(MessageLevel::Error)
+                        .show();
+                    return None;
+                }
+            }
+        }
+
+        next_frame().await;
+    }
+}
+
 #[macroquad::main(window_config)]
 async fn main() {
-    let file = FileDialog::new()
-        .add_filter("CHIP-8 ROM", &["ch8", "rom"])
-        .add_filter("All Files", &["*"])
-        .pick_file();
-
-    if file.is_none() {
-        MessageDialog::new()
-            .set_title("Error")
-            .set_description("No ROM selected!")
-            .set_level(MessageLevel::Error)
-            .show();
+    let Some((variant, rom_data)) = setup().await else {
         return;
-    }
+    };
 
-    let file = file.unwrap();
+    clear_background(BLACK);
 
     let audio = AudioManager::new().await;
 
-    // TODO : Allow Chip 8 Variant to be decided by input
-    let variant = Chip8Variant::SuperChip;
-
     let mut chip8 = Cpu::new(audio, variant);
 
-    let mut rom = File::open(file).expect("Unable to open file");
-    let mut buffer = Vec::new();
-    rom.read_to_end(&mut buffer).unwrap();
-    chip8.load(&buffer);
+    chip8.load(&rom_data);
 
     // Initalize prev_res to the default resolution (lores)
     let mut prev_res = DisplayMode::LoRes;
