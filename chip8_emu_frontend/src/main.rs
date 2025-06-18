@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use chip8_emu_backend::*;
 use macroquad::prelude::*;
 use rfd::{FileDialog, MessageDialog, MessageLevel};
